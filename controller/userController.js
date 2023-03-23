@@ -14,8 +14,12 @@ const addUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const data = await User.find();
-    res.status(200).json({ message: "users gotten successfully", data });
+    const data = await User.find({ user: req.user._id });
+    res.status(200).json({
+      message: "users gotten successfully",
+      length: data.length,
+      data,
+    });
   } catch (error) {
     console.log(error);
     res
@@ -28,7 +32,7 @@ const updateUser = async (req, res) => {
   try {
     const id = req.params.id;
     const { age } = req.body;
-    const data = await User.findByIdAndUpdate(id, { age }, { new: true });
+    const data = await User.findByIdAndUpdate(id, req.body, { new: true });
     res.status(200).json({ message: "user updated successfully", data });
   } catch (error) {
     console.log(error);
@@ -39,8 +43,23 @@ const updateUser = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
-  const id = req.params.id;
-  await User.findByIdAndDelete(id);
+  try {
+    const id = req.params.id;
+
+    const user = await User.findById(id);
+
+    if (!user) throw new Error("user not found");
+
+    if (!req.user.id) throw new Error("not authorized");
+
+    if (user.user.toString() === req.user.id) await User.findByIdAndDelete(id);
+    else throw new Error("you can not delete cuz you're not the creator");
+  } catch (error) {
+    res.status(401).json({
+      message: error.message,
+    });
+  }
+
   res.status(200).json({ message: "User deleted successfully" });
 };
 
