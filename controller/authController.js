@@ -10,13 +10,12 @@ const register = async (req, res) => {
       throw new Error("please fill in all required fields");
 
     const userExists = await Auth.findOne({ email });
+
     if (userExists) throw new Error("User already exists");
 
     // hash the user password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
-    const token = generateJWT(user._id);
 
     const user = await Auth.create({
       fullName,
@@ -26,7 +25,7 @@ const register = async (req, res) => {
 
     res.status(201).json({
       message: "user created successfully",
-      token,
+      token: generateJWT(user._id),
       user,
     });
   } catch (error) {
@@ -55,7 +54,7 @@ const login = async (req, res) => {
         token,
         user: {
           id: user._id,
-          user: user.fullName,
+          fullName: user.fullName,
           email: user.email,
         },
       });
@@ -67,10 +66,17 @@ const login = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  res.status(200).json({
+    user: req.user,
+    message: "me",
+  });
+};
+
 const generateJWT = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "1d",
   });
 };
 
-module.exports = { register, login };
+module.exports = { register, login, getMe };

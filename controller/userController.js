@@ -3,7 +3,7 @@ const User = require("../models/userSchema");
 const addUser = async (req, res) => {
   const { name, age } = req.body;
   try {
-    const data = await User.create({ name, age });
+    const data = await User.create({ user: req.user._id, name, age });
     res.status(201).json({ message: "user created successfully", data });
   } catch (error) {
     res
